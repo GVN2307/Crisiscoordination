@@ -1,67 +1,52 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { UnverifiedDrawer } from "@/components/crisis/unverified-drawer";
-import { VerifiedCommand } from "@/components/crisis/verified-command";
-import { CrisisMap } from "@/components/crisis/crisis-map";
-import { SOSButton } from "@/components/crisis/sos-button";
-import { StatusBar } from "@/components/crisis/status-bar";
-import { ConnectionStatusBar } from "@/components/crisis/connection-status-bar";
+import { LeafletMap } from "@/components/crisis/leaflet-map";
+import { QuickActions } from "@/components/crisis/quick-actions";
+import { IncidentFeed } from "@/components/crisis/incident-feed";
 import { VerificationPanel } from "@/components/crisis/verification-panel";
-import { MeshVisualizer } from "@/components/crisis/mesh-visualizer";
-import { SettingsPanel } from "@/components/crisis/settings-panel";
-import { CrisisErrorBoundary, VerificationErrorFallback } from "@/components/crisis/error-boundary";
+import { CrisisErrorBoundary } from "@/components/crisis/error-boundary";
 import { FlagFalseConfirmation, VerifyConfirmation } from "@/components/crisis/confirmation-modal";
-import {
-  mockRawMessages,
-  mockIncidents,
-  mockMeshNodes,
-  mockMeshConnections,
-  mockNetworkStats,
-} from "@/lib/mock-data";
+import { mockIncidents } from "@/lib/mock-data";
 import type { Incident } from "@/lib/types";
-import type { ConnectionState, QueuedMessage } from "@/lib/connection-store";
-import { queueMessage, detectConnectionState } from "@/lib/connection-store";
-import { checkRateLimit } from "@/lib/security";
-import { AccessibilityProvider, useAccessibility } from "@/lib/accessibility-context";
 import { Button } from "@/components/ui/button";
-import { Wifi, Map, PanelLeft, Menu } from "lucide-react";
+import {
+  AlertTriangle,
+  Map,
+  List,
+  Menu,
+  Settings,
+  Wifi,
+  WifiOff,
+  Bell,
+  Shield,
+  X,
+  ChevronUp,
+  Phone,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-function CrisisOSDashboardContent() {
+type ViewMode = "map" | "list";
+
+export default function CrisisOSDashboard() {
   const [incidents, setIncidents] = useState(mockIncidents);
-  const [rawMessages, setRawMessages] = useState(mockRawMessages);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
-  const [showMeshVisualizer, setShowMeshVisualizer] = useState(false);
-  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
-  const [showMap, setShowMap] = useState(true);
-
-  // Connection state
-  const [connectionState, setConnectionState] = useState<ConnectionState>("online");
-  const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [peerCount, setPeerCount] = useState(5);
+  const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSOSExpanded, setShowSOSExpanded] = useState(false);
 
   // Confirmation modals
   const [showFlagConfirm, setShowFlagConfirm] = useState(false);
   const [showVerifyConfirm, setShowVerifyConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; id: string } | null>(null);
 
-  // Rate limiting
-  const [uploadRateInfo, setUploadRateInfo] = useState({ remaining: 5, resetIn: 0 });
-
-  const { batterySaverMode } = useAccessibility();
-
-  // Simulate network status changes
+  // Network status
   useEffect(() => {
-    const handleOnline = () => {
-      const newState = detectConnectionState(true, peerCount);
-      setConnectionState(newState);
-    };
-    const handleOffline = () => {
-      const newState = detectConnectionState(false, peerCount);
-      setConnectionState(newState);
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -70,76 +55,43 @@ function CrisisOSDashboardContent() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [peerCount]);
+  }, []);
 
-  const handleProcessMessage = useCallback((id: string) => {
-    // Check rate limit
-    const rateCheck = checkRateLimit("user-1", "imageUpload");
-    setUploadRateInfo({ remaining: rateCheck.remaining, resetIn: rateCheck.resetIn });
+  const handleLocationUpdate = useCallback((location: { lat: number; lng: number }) => {
+    setUserLocation(location);
+  }, []);
 
-    if (!rateCheck.allowed) {
-      return;
-    }
-
-    // Simulate AI processing
-    setRawMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === id ? { ...msg, isProcessing: true } : msg
-      )
-    );
-
-    // If offline, queue the message
-    if (connectionState !== "online") {
-      const message = rawMessages.find((m) => m.id === id);
-      if (message) {
-        setQueuedMessages((prev) => queueMessage(prev, "report", { messageId: id }));
-      }
-    }
-
-    // Simulate processing delay and conversion to incident
-    setTimeout(() => {
-      const message = rawMessages.find((m) => m.id === id);
-      if (!message) return;
-
+  const handleReportIncident = useCallback(
+    (type: string, location: { lat: number; lng: number } | null) => {
       const newIncident: Incident = {
-        id: `inc-new-${Date.now()}`,
-        title: message.content.slice(0, 50) + "...",
-        description: message.content,
-        location: message.location || { lat: 31.5, lng: 34.47 },
+        id: `inc-${Date.now()}`,
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} Emergency Reported`,
+        description: `A ${type} emergency has been reported by a user.`,
+        location: location || { lat: 31.5, lng: 34.47 },
         status: "unconfirmed",
-        severity: message.content.toLowerCase().includes("urgent") ||
-          message.content.toLowerCase().includes("critical")
-          ? "critical"
-          : "medium",
-        category: message.content.toLowerCase().includes("medical")
-          ? "medical"
-          : message.content.toLowerCase().includes("water")
-            ? "water"
-            : "other",
-        imageUrl: message.imageUrl,
-        source: {
-          type: message.source,
-          authorityScore: 50,
-        },
+        severity: type === "medical" || type === "security" ? "critical" : "medium",
+        category: type as Incident["category"],
+        source: { type: "direct", authorityScore: 60 },
         verification: {
-          score: 65,
-          status: "unconfirmed",
-          checks: [
-            { type: "reverse_image", passed: true, confidence: 80, details: "No matches found" },
-            { type: "geolocation", passed: true, confidence: 70, details: "Location plausible" },
-            { type: "temporal", passed: false, confidence: 50, details: "Cannot verify time" },
-          ],
+          score: 50,
+          status: "pending",
+          checks: [],
           timestamp: Date.now(),
         },
-        timestamp: message.timestamp,
+        timestamp: Date.now(),
         updatedAt: Date.now(),
         peerConfirmations: 0,
       };
 
       setIncidents((prev) => [newIncident, ...prev]);
-      setRawMessages((prev) => prev.filter((m) => m.id !== id));
-    }, 2000);
-  }, [rawMessages, connectionState]);
+
+      // Haptic feedback
+      if ("vibrate" in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    },
+    []
+  );
 
   const handleVerifyIncident = useCallback((id: string) => {
     setPendingAction({ type: "verify", id });
@@ -164,7 +116,6 @@ function CrisisOSDashboardContent() {
     setShowVerifyConfirm(false);
     setPendingAction(null);
 
-    // Haptic feedback
     if ("vibrate" in navigator) {
       navigator.vibrate(50);
     }
@@ -194,262 +145,328 @@ function CrisisOSDashboardContent() {
     setPendingAction(null);
   }, [pendingAction]);
 
-  const handleSOSSubmit = useCallback((data: { type: string; description: string; location: { lat: number; lng: number } | null }) => {
-    // Queue if offline
-    if (connectionState !== "online") {
-      setQueuedMessages((prev) => queueMessage(prev, "sos", data));
-    }
-
-    const newIncident: Incident = {
-      id: `inc-sos-${Date.now()}`,
-      title: `SOS: ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Emergency`,
-      description: data.description || `Emergency ${data.type} assistance requested`,
-      location: data.location || { lat: 31.5, lng: 34.47 },
-      status: "unconfirmed",
-      severity: "critical",
-      category: data.type as Incident["category"],
-      source: {
-        type: "direct",
-        authorityScore: 60,
-      },
-      verification: {
-        score: 50,
-        status: "pending",
-        checks: [],
-        timestamp: Date.now(),
-      },
-      timestamp: Date.now(),
-      updatedAt: Date.now(),
-      peerConfirmations: 0,
-    };
-
-    setIncidents((prev) => [newIncident, ...prev]);
-
-    // Haptic feedback
-    if ("vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100]);
-    }
-  }, [connectionState]);
-
-  const handleRetrySync = useCallback(() => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setQueuedMessages([]);
-      setIsSyncing(false);
-      setConnectionState("online");
-    }, 2000);
-  }, []);
-
-  const handleClearQueue = useCallback(() => {
-    setQueuedMessages([]);
-  }, []);
-
-  // Toggle offline mode for demo
-  const handleToggleOffline = useCallback(() => {
-    if (connectionState === "online") {
-      setConnectionState("mesh");
-      setPeerCount(3);
-    } else if (connectionState === "mesh") {
-      setConnectionState("isolated");
-      setPeerCount(0);
-    } else {
-      setConnectionState("online");
-      setPeerCount(5);
-    }
-  }, [connectionState]);
+  const criticalCount = incidents.filter((i) => i.severity === "critical").length;
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* Skip to content link for keyboard navigation */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
-      >
-        Skip to main content
-      </a>
+      {/* Network Status Banner */}
+      {!isOnline && (
+        <div className="bg-crisis-warning/20 border-b border-crisis-warning/30 px-4 py-2 flex items-center justify-center gap-2">
+          <WifiOff className="h-4 w-4 text-crisis-warning" />
+          <span className="text-sm text-crisis-warning font-medium">
+            You are offline. Some features may be limited.
+          </span>
+        </div>
+      )}
 
-      {/* Connection Status Bar */}
-      <ConnectionStatusBar
-        state={connectionState}
-        peerCount={peerCount}
-        queuedMessages={queuedMessages}
-        isSyncing={isSyncing}
-        onRetrySync={handleRetrySync}
-        onDismissQueue={handleClearQueue}
-        isSecureMesh={true}
-      />
+      {/* Header */}
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="font-bold text-lg">SafeZone</span>
+          </div>
+        </div>
 
-      {/* Status Bar */}
-      <StatusBar
-        networkStats={mockNetworkStats}
-        isOfflineMode={connectionState !== "online"}
-        onToggleOffline={handleToggleOffline}
-      />
-
-      {/* Main Content */}
-      <main id="main-content" className="flex flex-1 overflow-hidden">
-        {/* Left Panel: Unverified Stream (Drawer on mobile) */}
-        <UnverifiedDrawer
-          messages={rawMessages}
-          onProcessMessage={handleProcessMessage}
-          onVerifyMessage={(id) => {
-            // Quick verify from swipe
-            setPendingAction({ type: "verify", id });
-            setShowVerifyConfirm(true);
-          }}
-          onFlagMessage={(id) => {
-            setPendingAction({ type: "flag", id });
-            setShowFlagConfirm(true);
-          }}
-          isOpen={showLeftDrawer}
-          onOpenChange={setShowLeftDrawer}
-        />
-
-        {/* Center/Right: Map + Verified Command */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="touch-target-lg h-11 w-11 md:hidden"
-                onClick={() => setShowLeftDrawer(true)}
-                aria-label="Open unverified stream"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("touch-target-lg h-11 w-11", showMap && "bg-secondary")}
-                onClick={() => setShowMap(!showMap)}
-                aria-label={showMap ? "Hide map" : "Show map"}
-                aria-pressed={showMap}
-              >
-                <Map className="h-5 w-5" />
-              </Button>
+        <div className="flex items-center gap-2">
+          {/* Critical Alert Badge */}
+          {criticalCount > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-crisis-critical/20 border border-crisis-critical/30">
+              <div className="h-2 w-2 rounded-full bg-crisis-critical animate-pulse" />
+              <span className="text-sm font-medium text-crisis-critical">
+                {criticalCount} Critical
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="touch-target-lg min-h-[44px] gap-2 bg-transparent"
-                onClick={() => setShowMeshVisualizer(true)}
-                aria-label="Open mesh network visualizer"
-              >
-                <Wifi className="h-4 w-4" />
-                <span className="hidden sm:inline">Mesh Network</span>
-              </Button>
-              <SettingsPanel />
-            </div>
+          )}
+
+          {/* Connection Status */}
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+              isOnline ? "bg-crisis-success/20" : "bg-muted"
+            )}
+          >
+            {isOnline ? (
+              <Wifi className="h-4 w-4 text-crisis-success" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-muted-foreground" />
+            )}
           </div>
 
-          {/* Content Grid */}
-          <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-            {/* Map */}
-            {showMap && !batterySaverMode && (
-              <div className="h-[250px] border-b border-border/50 lg:h-full lg:flex-1 lg:border-b-0 lg:border-r">
-                <CrisisErrorBoundary>
-                  <CrisisMap
-                    incidents={incidents}
-                    onSelectIncident={setSelectedIncident}
-                    className="h-full w-full"
-                  />
-                </CrisisErrorBoundary>
-              </div>
-            )}
+          {/* Settings */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full"
+            onClick={() => setShowSettings(true)}
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
 
-            {/* Battery saver map placeholder */}
-            {showMap && batterySaverMode && (
-              <div className="flex h-[250px] items-center justify-center border-b border-border/50 bg-muted lg:h-full lg:flex-1 lg:border-b-0 lg:border-r">
-                <p className="text-muted-foreground text-sm">Map disabled in Battery Saver mode</p>
-              </div>
-            )}
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* View Toggle */}
+        <div className="px-4 py-3 flex items-center gap-2 bg-background border-b border-border">
+          <div className="flex rounded-xl bg-muted p-1 flex-1 max-w-xs">
+            <button
+              onClick={() => setViewMode("map")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors",
+                viewMode === "map"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Map className="h-4 w-4" />
+              Map
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors",
+                viewMode === "list"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <List className="h-4 w-4" />
+              List
+            </button>
+          </div>
 
-            {/* Verified Command */}
-            <div className={cn("flex-1 overflow-hidden", showMap ? "lg:w-[400px] lg:flex-none" : "")}>
+          <div className="flex-1" />
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 rounded-xl bg-transparent"
+            onClick={() => window.open("tel:911")}
+          >
+            <Phone className="h-4 w-4 text-crisis-critical" />
+            <span className="hidden sm:inline">Emergency Call</span>
+          </Button>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          {/* Map View */}
+          {viewMode === "map" && (
+            <div className="flex-1 relative">
               <CrisisErrorBoundary>
-                <VerifiedCommand
+                <LeafletMap
                   incidents={incidents}
                   onSelectIncident={setSelectedIncident}
+                  onLocationUpdate={handleLocationUpdate}
+                  className="h-full w-full"
                 />
               </CrisisErrorBoundary>
+
+              {/* Floating Quick Actions on Map */}
+              <div className="absolute bottom-0 left-0 right-0 lg:hidden">
+                <div className="bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
+                  {!showSOSExpanded ? (
+                    <Button
+                      onClick={() => setShowSOSExpanded(true)}
+                      className="w-full h-14 rounded-2xl bg-crisis-critical hover:bg-crisis-critical/90 text-white font-semibold text-lg gap-2 shadow-lg"
+                    >
+                      <AlertTriangle className="h-5 w-5" />
+                      Report Emergency
+                      <ChevronUp className="h-5 w-5 ml-auto" />
+                    </Button>
+                  ) : (
+                    <div className="bg-card rounded-2xl border border-border shadow-xl">
+                      <div className="flex items-center justify-between p-4 border-b border-border">
+                        <h3 className="font-semibold">What do you need help with?</h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => setShowSOSExpanded(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <QuickActions
+                        onReportIncident={handleReportIncident}
+                        userLocation={userLocation}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* List View */}
+          {viewMode === "list" && (
+            <div className="flex-1 overflow-hidden">
+              <IncidentFeed
+                incidents={incidents}
+                onSelectIncident={setSelectedIncident}
+              />
+            </div>
+          )}
+
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:flex lg:w-[400px] lg:flex-col lg:border-l lg:border-border">
+            {/* Quick Actions */}
+            <div className="border-b border-border">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="font-semibold">Report an Incident</h3>
+                <p className="text-sm text-muted-foreground">
+                  Select the type of emergency you need help with
+                </p>
+              </div>
+              <QuickActions
+                onReportIncident={handleReportIncident}
+                userLocation={userLocation}
+              />
+            </div>
+
+            {/* Incident Feed */}
+            <div className="flex-1 overflow-hidden">
+              <IncidentFeed
+                incidents={incidents}
+                onSelectIncident={setSelectedIncident}
+              />
             </div>
           </div>
         </div>
       </main>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="flex items-center justify-around border-t border-border bg-card px-4 py-2 md:hidden" aria-label="Mobile navigation">
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden flex items-center justify-around border-t border-border bg-card px-2 py-2 safe-area-inset-bottom">
         <Button
           variant="ghost"
           size="sm"
-          className="touch-target-lg flex-col gap-1"
-          onClick={() => setShowLeftDrawer(true)}
-        >
-          <PanelLeft className="h-5 w-5" />
-          <span className="text-xs">Stream</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn("touch-target-lg flex-col gap-1", showMap && "text-primary")}
-          onClick={() => setShowMap(!showMap)}
+          className={cn(
+            "flex-col gap-1 h-auto py-2 px-4 rounded-xl",
+            viewMode === "map" && "bg-muted text-primary"
+          )}
+          onClick={() => setViewMode("map")}
         >
           <Map className="h-5 w-5" />
           <span className="text-xs">Map</span>
         </Button>
-        {/* SOS takes middle position - handled by floating button */}
-        <div className="w-16" /> {/* Spacer for floating SOS button */}
+
         <Button
           variant="ghost"
           size="sm"
-          className="touch-target-lg flex-col gap-1"
-          onClick={() => setShowMeshVisualizer(true)}
+          className={cn(
+            "flex-col gap-1 h-auto py-2 px-4 rounded-xl",
+            viewMode === "list" && "bg-muted text-primary"
+          )}
+          onClick={() => setViewMode("list")}
         >
-          <Wifi className="h-5 w-5" />
-          <span className="text-xs">Mesh</span>
+          <List className="h-5 w-5" />
+          <span className="text-xs">Incidents</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-col gap-1 h-auto py-2 px-4 rounded-xl"
+          onClick={() => setShowSettings(true)}
+        >
+          <Settings className="h-5 w-5" />
+          <span className="text-xs">Settings</span>
         </Button>
       </nav>
 
-      {/* SOS Button */}
-      <SOSButton onSubmit={handleSOSSubmit} />
-
-      {/* Verification Panel (Slide-in) */}
+      {/* Verification Panel */}
       {selectedIncident && (
-        <CrisisErrorBoundary
-          fallbackComponent={
-            <VerificationErrorFallback
-              onRetry={() => setSelectedIncident(selectedIncident)}
-              onManualReview={() => {
-                setSelectedIncident(null);
-              }}
-            />
-          }
-        >
+        <CrisisErrorBoundary>
           <VerificationPanel
             incident={selectedIncident}
             onClose={() => setSelectedIncident(null)}
             onVerify={handleVerifyIncident}
             onDebunk={handleDebunkIncident}
-            onRequestReview={(id) => {
-              setSelectedIncident(null);
-            }}
+            onRequestReview={() => setSelectedIncident(null)}
           />
         </CrisisErrorBoundary>
       )}
 
-      {/* Mesh Visualizer Modal */}
-      {!batterySaverMode && (
-        <MeshVisualizer
-          nodes={mockMeshNodes}
-          connections={mockMeshConnections}
-          stats={mockNetworkStats}
-          isOpen={showMeshVisualizer}
-          onClose={() => setShowMeshVisualizer(false)}
-        />
-      )}
+      {/* Settings Sheet */}
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent side="right" className="w-full max-w-md">
+          <SheetHeader>
+            <SheetTitle>Settings</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6 space-y-6">
+            {/* Connection Status */}
+            <div className="rounded-xl bg-muted p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {isOnline ? (
+                    <Wifi className="h-5 w-5 text-crisis-success" />
+                  ) : (
+                    <WifiOff className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="font-medium">Connection Status</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isOnline ? "Connected to network" : "Offline mode"}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "h-3 w-3 rounded-full",
+                    isOnline ? "bg-crisis-success" : "bg-muted-foreground"
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="rounded-xl bg-muted p-4">
+              <div className="flex items-center gap-3">
+                <Map className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <p className="font-medium">Your Location</p>
+                  {userLocation ? (
+                    <p className="text-sm text-muted-foreground font-mono">
+                      {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-crisis-warning">Not available</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contacts */}
+            <div>
+              <h4 className="font-medium mb-3">Emergency Contacts</h4>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-14 rounded-xl gap-3 bg-transparent"
+                  onClick={() => window.open("tel:911")}
+                >
+                  <Phone className="h-5 w-5 text-crisis-critical" />
+                  <div className="text-left">
+                    <p className="font-medium">Emergency Services</p>
+                    <p className="text-xs text-muted-foreground">911</p>
+                  </div>
+                </Button>
+              </div>
+            </div>
+
+            {/* About */}
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground text-center">
+                SafeZone v1.0 - Civilian Crisis Coordination
+              </p>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                Stay safe. Help others. Report emergencies.
+              </p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Confirmation Modals */}
       <FlagFalseConfirmation
@@ -470,13 +487,5 @@ function CrisisOSDashboardContent() {
         onConfirm={handleConfirmVerify}
       />
     </div>
-  );
-}
-
-export default function CrisisOSDashboard() {
-  return (
-    <AccessibilityProvider>
-      <CrisisOSDashboardContent />
-    </AccessibilityProvider>
   );
 }
