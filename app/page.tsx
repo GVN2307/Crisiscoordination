@@ -7,22 +7,22 @@ import { IncidentFeed } from "@/components/crisis/incident-feed";
 import { VerificationPanel } from "@/components/crisis/verification-panel";
 import { CrisisErrorBoundary } from "@/components/crisis/error-boundary";
 import { FlagFalseConfirmation, VerifyConfirmation } from "@/components/crisis/confirmation-modal";
-import { mockIncidents } from "@/lib/mock-data";
+import { mockIncidents, generateRandomIncident } from "@/lib/mock-data";
 import type { Incident } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
   Map,
   List,
-  Menu,
   Settings,
   Wifi,
   WifiOff,
-  Bell,
   Shield,
   X,
   ChevronUp,
   Phone,
+  Bell,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -30,13 +30,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 type ViewMode = "map" | "list";
 
 export default function CrisisOSDashboard() {
-  const [incidents, setIncidents] = useState(mockIncidents);
+  const [incidents, setIncidents] = useState<Incident[]>(mockIncidents);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSOSExpanded, setShowSOSExpanded] = useState(false);
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
+  const [newIncidentCount, setNewIncidentCount] = useState(0);
 
   // Confirmation modals
   const [showFlagConfirm, setShowFlagConfirm] = useState(false);
@@ -56,6 +58,22 @@ export default function CrisisOSDashboard() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  // Realtime incident simulation
+  useEffect(() => {
+    if (!isRealtimeEnabled || !isOnline) return;
+
+    const interval = setInterval(() => {
+      const newIncident = generateRandomIncident();
+      setIncidents((prev) => [newIncident, ...prev.slice(0, 49)]); // Keep max 50 incidents
+      setNewIncidentCount((prev) => prev + 1);
+
+      // Reset new count after 3 seconds
+      setTimeout(() => setNewIncidentCount((prev) => Math.max(0, prev - 1)), 3000);
+    }, 15000); // New incident every 15 seconds
+
+    return () => clearInterval(interval);
+  }, [isRealtimeEnabled, isOnline]);
 
   const handleLocationUpdate = useCallback((location: { lat: number; lng: number }) => {
     setUserLocation(location);
@@ -84,6 +102,7 @@ export default function CrisisOSDashboard() {
       };
 
       setIncidents((prev) => [newIncident, ...prev]);
+      setShowSOSExpanded(false);
 
       // Haptic feedback
       if ("vibrate" in navigator) {
@@ -151,29 +170,42 @@ export default function CrisisOSDashboard() {
     <div className="flex h-screen flex-col bg-background">
       {/* Network Status Banner */}
       {!isOnline && (
-        <div className="bg-crisis-warning/20 border-b border-crisis-warning/30 px-4 py-2 flex items-center justify-center gap-2">
-          <WifiOff className="h-4 w-4 text-crisis-warning" />
-          <span className="text-sm text-crisis-warning font-medium">
+        <div className="bg-amber-500/20 border-b border-amber-500/30 px-4 py-2 flex items-center justify-center gap-2">
+          <WifiOff className="h-4 w-4 text-amber-600" />
+          <span className="text-sm text-amber-700 font-medium">
             You are offline. Some features may be limited.
           </span>
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">SafeZone</span>
+            <Shield className="h-6 w-6 text-blue-600" />
+            <span className="font-bold text-lg text-gray-900">SafeZone</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Realtime Indicator */}
+          {isRealtimeEnabled && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 border border-green-200">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-medium text-green-700">Live</span>
+              {newIncidentCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-green-500 text-white text-xs font-bold">
+                  +{newIncidentCount}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Critical Alert Badge */}
           {criticalCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-crisis-critical/20 border border-crisis-critical/30">
-              <div className="h-2 w-2 rounded-full bg-crisis-critical animate-pulse" />
-              <span className="text-sm font-medium text-crisis-critical">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 border border-red-200">
+              <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-sm font-medium text-red-700">
                 {criticalCount} Critical
               </span>
             </div>
@@ -183,13 +215,13 @@ export default function CrisisOSDashboard() {
           <div
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-              isOnline ? "bg-crisis-success/20" : "bg-muted"
+              isOnline ? "bg-green-100" : "bg-gray-100"
             )}
           >
             {isOnline ? (
-              <Wifi className="h-4 w-4 text-crisis-success" />
+              <Wifi className="h-4 w-4 text-green-600" />
             ) : (
-              <WifiOff className="h-4 w-4 text-muted-foreground" />
+              <WifiOff className="h-4 w-4 text-gray-500" />
             )}
           </div>
 
@@ -197,42 +229,44 @@ export default function CrisisOSDashboard() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full"
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
             onClick={() => setShowSettings(true)}
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-5 w-5 text-gray-600" />
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden relative">
         {/* View Toggle */}
-        <div className="px-4 py-3 flex items-center gap-2 bg-background border-b border-border">
-          <div className="flex rounded-xl bg-muted p-1 flex-1 max-w-xs">
+        <div className="px-4 py-3 flex items-center gap-2 bg-white border-b border-gray-200">
+          <div className="flex rounded-xl bg-gray-100 p-1 flex-1 max-w-xs">
             <button
+              type="button"
               onClick={() => setViewMode("map")}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors",
                 viewMode === "map"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               )}
             >
               <Map className="h-4 w-4" />
               Map
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("list")}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors",
                 viewMode === "list"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               )}
             >
               <List className="h-4 w-4" />
-              List
+              List ({incidents.length})
             </button>
           </div>
 
@@ -241,10 +275,10 @@ export default function CrisisOSDashboard() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 rounded-xl bg-transparent"
+            className="gap-2 rounded-xl bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
             onClick={() => window.open("tel:911")}
           >
-            <Phone className="h-4 w-4 text-crisis-critical" />
+            <Phone className="h-4 w-4 text-red-500" />
             <span className="hidden sm:inline">Emergency Call</span>
           </Button>
         </div>
@@ -264,29 +298,29 @@ export default function CrisisOSDashboard() {
               </CrisisErrorBoundary>
 
               {/* Floating Quick Actions on Map */}
-              <div className="absolute bottom-0 left-0 right-0 lg:hidden">
-                <div className="bg-gradient-to-t from-background via-background/95 to-transparent pt-8 pb-4 px-4">
+              <div className="absolute bottom-0 left-0 right-0 lg:hidden z-30 pointer-events-none">
+                <div className="bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4 pointer-events-auto">
                   {!showSOSExpanded ? (
-                    <Button
+                    <button
+                      type="button"
                       onClick={() => setShowSOSExpanded(true)}
-                      className="w-full h-14 rounded-2xl bg-crisis-critical hover:bg-crisis-critical/90 text-white font-semibold text-lg gap-2 shadow-lg"
+                      className="w-full h-14 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-semibold text-lg flex items-center justify-center gap-2 shadow-lg transition-colors"
                     >
                       <AlertTriangle className="h-5 w-5" />
                       Report Emergency
                       <ChevronUp className="h-5 w-5 ml-auto" />
-                    </Button>
+                    </button>
                   ) : (
-                    <div className="bg-card rounded-2xl border border-border shadow-xl">
-                      <div className="flex items-center justify-between p-4 border-b border-border">
-                        <h3 className="font-semibold">What do you need help with?</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full"
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-xl">
+                      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                        <h3 className="font-semibold text-gray-900">What do you need help with?</h3>
+                        <button
+                          type="button"
                           onClick={() => setShowSOSExpanded(false)}
+                          className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
                       </div>
                       <QuickActions
                         onReportIncident={handleReportIncident}
@@ -301,7 +335,7 @@ export default function CrisisOSDashboard() {
 
           {/* List View */}
           {viewMode === "list" && (
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden bg-white">
               <IncidentFeed
                 incidents={incidents}
                 onSelectIncident={setSelectedIncident}
@@ -310,12 +344,12 @@ export default function CrisisOSDashboard() {
           )}
 
           {/* Desktop Sidebar */}
-          <div className="hidden lg:flex lg:w-[400px] lg:flex-col lg:border-l lg:border-border">
+          <div className="hidden lg:flex lg:w-[400px] lg:flex-col lg:border-l lg:border-gray-200 bg-white">
             {/* Quick Actions */}
-            <div className="border-b border-border">
-              <div className="px-4 py-3 border-b border-border">
-                <h3 className="font-semibold">Report an Incident</h3>
-                <p className="text-sm text-muted-foreground">
+            <div className="border-b border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <h3 className="font-semibold text-gray-900">Report an Incident</h3>
+                <p className="text-sm text-gray-500">
                   Select the type of emergency you need help with
                 </p>
               </div>
@@ -337,76 +371,110 @@ export default function CrisisOSDashboard() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden flex items-center justify-around border-t border-border bg-card px-2 py-2 safe-area-inset-bottom">
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "flex-col gap-1 h-auto py-2 px-4 rounded-xl",
-            viewMode === "map" && "bg-muted text-primary"
-          )}
+      <nav className="lg:hidden flex items-center justify-around border-t border-gray-200 bg-white px-2 py-2 safe-area-inset-bottom">
+        <button
+          type="button"
           onClick={() => setViewMode("map")}
+          className={cn(
+            "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors",
+            viewMode === "map" ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-50"
+          )}
         >
           <Map className="h-5 w-5" />
-          <span className="text-xs">Map</span>
-        </Button>
+          <span className="text-xs font-medium">Map</span>
+        </button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "flex-col gap-1 h-auto py-2 px-4 rounded-xl",
-            viewMode === "list" && "bg-muted text-primary"
-          )}
+        <button
+          type="button"
           onClick={() => setViewMode("list")}
+          className={cn(
+            "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors relative",
+            viewMode === "list" ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-50"
+          )}
         >
           <List className="h-5 w-5" />
-          <span className="text-xs">Incidents</span>
-        </Button>
+          <span className="text-xs font-medium">Incidents</span>
+          {newIncidentCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+              {newIncidentCount}
+            </span>
+          )}
+        </button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex-col gap-1 h-auto py-2 px-4 rounded-xl"
+        <button
+          type="button"
           onClick={() => setShowSettings(true)}
+          className="flex flex-col items-center gap-1 py-2 px-4 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors"
         >
           <Settings className="h-5 w-5" />
-          <span className="text-xs">Settings</span>
-        </Button>
+          <span className="text-xs font-medium">Settings</span>
+        </button>
       </nav>
 
-      {/* Verification Panel */}
+      {/* Verification Panel - High z-index */}
       {selectedIncident && (
-        <CrisisErrorBoundary>
-          <VerificationPanel
-            incident={selectedIncident}
-            onClose={() => setSelectedIncident(null)}
-            onVerify={handleVerifyIncident}
-            onDebunk={handleDebunkIncident}
-            onRequestReview={() => setSelectedIncident(null)}
-          />
-        </CrisisErrorBoundary>
+        <div className="fixed inset-0 z-50">
+          <CrisisErrorBoundary>
+            <VerificationPanel
+              incident={selectedIncident}
+              onClose={() => setSelectedIncident(null)}
+              onVerify={handleVerifyIncident}
+              onDebunk={handleDebunkIncident}
+              onRequestReview={() => setSelectedIncident(null)}
+            />
+          </CrisisErrorBoundary>
+        </div>
       )}
 
-      {/* Settings Sheet */}
+      {/* Settings Sheet - High z-index */}
       <Sheet open={showSettings} onOpenChange={setShowSettings}>
-        <SheetContent side="right" className="w-full max-w-md">
+        <SheetContent side="right" className="w-full max-w-md z-[60]">
           <SheetHeader>
-            <SheetTitle>Settings</SheetTitle>
+            <SheetTitle className="text-gray-900">Settings</SheetTitle>
           </SheetHeader>
           <div className="mt-6 space-y-6">
+            {/* Realtime Toggle */}
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className={cn("h-5 w-5", isRealtimeEnabled ? "text-green-600" : "text-gray-400")} />
+                  <div>
+                    <p className="font-medium text-gray-900">Live Updates</p>
+                    <p className="text-sm text-gray-500">
+                      {isRealtimeEnabled ? "Receiving new incidents" : "Updates paused"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRealtimeEnabled(!isRealtimeEnabled)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                    isRealtimeEnabled ? "bg-green-500" : "bg-gray-300"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow",
+                      isRealtimeEnabled ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
             {/* Connection Status */}
-            <div className="rounded-xl bg-muted p-4">
+            <div className="rounded-xl bg-gray-50 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isOnline ? (
-                    <Wifi className="h-5 w-5 text-crisis-success" />
+                    <Wifi className="h-5 w-5 text-green-600" />
                   ) : (
-                    <WifiOff className="h-5 w-5 text-muted-foreground" />
+                    <WifiOff className="h-5 w-5 text-gray-400" />
                   )}
                   <div>
-                    <p className="font-medium">Connection Status</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-gray-900">Connection Status</p>
+                    <p className="text-sm text-gray-500">
                       {isOnline ? "Connected to network" : "Offline mode"}
                     </p>
                   </div>
@@ -414,53 +482,83 @@ export default function CrisisOSDashboard() {
                 <div
                   className={cn(
                     "h-3 w-3 rounded-full",
-                    isOnline ? "bg-crisis-success" : "bg-muted-foreground"
+                    isOnline ? "bg-green-500" : "bg-gray-400"
                   )}
                 />
               </div>
             </div>
 
             {/* Location */}
-            <div className="rounded-xl bg-muted p-4">
+            <div className="rounded-xl bg-gray-50 p-4">
               <div className="flex items-center gap-3">
-                <Map className="h-5 w-5 text-primary" />
+                <Map className="h-5 w-5 text-blue-600" />
                 <div className="flex-1">
-                  <p className="font-medium">Your Location</p>
+                  <p className="font-medium text-gray-900">Your Location</p>
                   {userLocation ? (
-                    <p className="text-sm text-muted-foreground font-mono">
+                    <p className="text-sm text-gray-500 font-mono">
                       {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
                     </p>
                   ) : (
-                    <p className="text-sm text-crisis-warning">Not available</p>
+                    <p className="text-sm text-amber-600">Not available</p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Incident Stats */}
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Bell className="h-5 w-5 text-blue-600" />
+                <p className="font-medium text-gray-900">Incident Statistics</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white rounded-lg p-3 text-center border border-gray-200">
+                  <p className="text-2xl font-bold text-gray-900">{incidents.length}</p>
+                  <p className="text-xs text-gray-500">Total</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 text-center border border-red-200">
+                  <p className="text-2xl font-bold text-red-600">{criticalCount}</p>
+                  <p className="text-xs text-gray-500">Critical</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 text-center border border-green-200">
+                  <p className="text-2xl font-bold text-green-600">
+                    {incidents.filter((i) => i.status === "verified").length}
+                  </p>
+                  <p className="text-xs text-gray-500">Verified</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 text-center border border-amber-200">
+                  <p className="text-2xl font-bold text-amber-600">
+                    {incidents.filter((i) => i.status === "unconfirmed").length}
+                  </p>
+                  <p className="text-xs text-gray-500">Pending</p>
                 </div>
               </div>
             </div>
 
             {/* Emergency Contacts */}
             <div>
-              <h4 className="font-medium mb-3">Emergency Contacts</h4>
+              <h4 className="font-medium text-gray-900 mb-3">Emergency Contacts</h4>
               <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start h-14 rounded-xl gap-3 bg-transparent"
+                <button
+                  type="button"
                   onClick={() => window.open("tel:911")}
+                  className="w-full flex items-center gap-3 h-14 rounded-xl border border-gray-200 px-4 hover:bg-gray-50 transition-colors"
                 >
-                  <Phone className="h-5 w-5 text-crisis-critical" />
+                  <Phone className="h-5 w-5 text-red-500" />
                   <div className="text-left">
-                    <p className="font-medium">Emergency Services</p>
-                    <p className="text-xs text-muted-foreground">911</p>
+                    <p className="font-medium text-gray-900">Emergency Services</p>
+                    <p className="text-xs text-gray-500">911</p>
                   </div>
-                </Button>
+                </button>
               </div>
             </div>
 
             {/* About */}
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground text-center">
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-500 text-center">
                 SafeZone v1.0 - Civilian Crisis Coordination
               </p>
-              <p className="text-xs text-muted-foreground text-center mt-1">
+              <p className="text-xs text-gray-400 text-center mt-1">
                 Stay safe. Help others. Report emergencies.
               </p>
             </div>
@@ -468,24 +566,26 @@ export default function CrisisOSDashboard() {
         </SheetContent>
       </Sheet>
 
-      {/* Confirmation Modals */}
-      <FlagFalseConfirmation
-        isOpen={showFlagConfirm}
-        onClose={() => {
-          setShowFlagConfirm(false);
-          setPendingAction(null);
-        }}
-        onConfirm={handleConfirmDebunk}
-      />
+      {/* Confirmation Modals - Highest z-index */}
+      <div className="relative z-[70]">
+        <FlagFalseConfirmation
+          isOpen={showFlagConfirm}
+          onClose={() => {
+            setShowFlagConfirm(false);
+            setPendingAction(null);
+          }}
+          onConfirm={handleConfirmDebunk}
+        />
 
-      <VerifyConfirmation
-        isOpen={showVerifyConfirm}
-        onClose={() => {
-          setShowVerifyConfirm(false);
-          setPendingAction(null);
-        }}
-        onConfirm={handleConfirmVerify}
-      />
+        <VerifyConfirmation
+          isOpen={showVerifyConfirm}
+          onClose={() => {
+            setShowVerifyConfirm(false);
+            setPendingAction(null);
+          }}
+          onConfirm={handleConfirmVerify}
+        />
+      </div>
     </div>
   );
 }
