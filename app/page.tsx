@@ -10,6 +10,7 @@ import { CrisisErrorBoundary } from "@/components/crisis/error-boundary";
 import { FlagFalseConfirmation, VerifyConfirmation } from "@/components/crisis/confirmation-modal";
 import { FloatingSOS } from "@/components/crisis/floating-sos";
 import { ZoneChat } from "@/components/crisis/zone-chat";
+import { StickyStatusIndicator } from "@/components/crisis/sticky-status-indicator";
 import { mockIncidents } from "@/lib/mock-data";
 import type { Incident } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -176,9 +177,12 @@ export default function CrisisOSDashboard() {
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
-      {/* Network Status Banner */}
+      {/* Sticky Connection Status Indicator - Always visible at top */}
+      <StickyStatusIndicator />
+
+      {/* Network Status Banner - Additional offline warning */}
       {!isOnline && (
-        <div className="bg-amber-500 px-4 py-2 flex items-center justify-center gap-2">
+        <div className="bg-amber-600 px-4 py-2 flex items-center justify-center gap-2 min-h-[44px]">
           <WifiOff className="h-4 w-4 text-white" />
           <span className="text-sm text-white font-medium">
             You are offline. Showing cached data.
