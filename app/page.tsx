@@ -176,13 +176,13 @@ export default function CrisisOSDashboard() {
   const liveIncidentCount = liveData?.incidents?.length || 0;
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Sticky Connection Status Indicator - Always visible at top */}
       <StickyStatusIndicator />
 
       {/* Network Status Banner - Additional offline warning */}
       {!isOnline && (
-        <div className="bg-amber-600 px-4 py-2 flex items-center justify-center gap-2 min-h-[44px]">
+        <div className="bg-amber-600 px-4 py-2 flex items-center justify-center gap-2 min-h-[44px] flex-shrink-0">
           <WifiOff className="h-4 w-4 text-white" />
           <span className="text-sm text-white font-medium">
             You are offline. Showing cached data.
@@ -191,7 +191,7 @@ export default function CrisisOSDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm flex-shrink-0 sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-blue-600" />
@@ -270,9 +270,9 @@ export default function CrisisOSDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 flex flex-col relative">
         {/* View Toggle */}
-        <div className="px-4 py-3 flex items-center gap-2 bg-white border-b border-gray-200">
+        <div className="px-4 py-3 flex flex-wrap items-center gap-2 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex rounded-xl bg-gray-100 p-1 flex-1 max-w-xs">
             <button
               type="button"
@@ -316,16 +316,16 @@ export default function CrisisOSDashboard() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row min-h-0">
           {/* Map View */}
           {viewMode === "map" && (
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-h-[50vh] lg:min-h-0">
               <CrisisErrorBoundary>
                 <LeafletMap
                   incidents={incidents}
                   onSelectIncident={setSelectedIncident}
                   onLocationUpdate={handleLocationUpdate}
-                  className="h-full w-full"
+                  className="h-full w-full absolute inset-0"
                 />
               </CrisisErrorBoundary>
             </div>
@@ -333,7 +333,7 @@ export default function CrisisOSDashboard() {
 
           {/* List View */}
           {viewMode === "list" && (
-            <div className="flex-1 overflow-hidden bg-white">
+            <div className="flex-1 bg-white overflow-y-auto min-h-[50vh] lg:min-h-0">
               <IncidentFeed
                 incidents={incidents}
                 onSelectIncident={setSelectedIncident}
@@ -342,9 +342,9 @@ export default function CrisisOSDashboard() {
           )}
 
           {/* Desktop Sidebar */}
-          <div className="hidden lg:flex lg:w-[400px] lg:flex-col lg:border-l lg:border-gray-200 bg-white">
+          <div className="hidden lg:flex lg:w-[400px] lg:flex-col lg:border-l lg:border-gray-200 bg-white lg:max-h-[calc(100vh-180px)] lg:overflow-hidden">
             {/* Quick Actions */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 flex-shrink-0">
               <div className="px-4 py-3 border-b border-gray-100">
                 <h3 className="font-semibold text-gray-900">Report an Incident</h3>
                 <p className="text-sm text-gray-500">
@@ -358,7 +358,7 @@ export default function CrisisOSDashboard() {
             </div>
 
             {/* Incident Feed */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
               <IncidentFeed
                 incidents={incidents}
                 onSelectIncident={setSelectedIncident}
@@ -369,7 +369,7 @@ export default function CrisisOSDashboard() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden flex items-center justify-around border-t border-gray-200 bg-white px-2 py-2 safe-area-inset-bottom">
+      <nav className="lg:hidden flex items-center justify-around border-t border-gray-200 bg-white px-2 py-2 safe-area-inset-bottom flex-shrink-0 sticky bottom-0 z-30">
         <button
           type="button"
           onClick={() => setViewMode("map")}
