@@ -1,0 +1,36 @@
+{
+  "name": "SafeZone - Crisis Coordination Platform",
+  "short_name": "SafeZone",
+  "description": "Real-time disaster monitoring and emergency coordination platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "categories": ["safety", "emergency", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-light-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Report Emergency",
+      "short_name": "SOS",
+      "description": "Report a new emergency incident",
+      "url": "/?action=report",
+      "icons": []
+    }
+  ],
+  "permissions": [
+    "geolocation"
+  ]
+}

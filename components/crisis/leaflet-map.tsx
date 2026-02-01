@@ -382,7 +382,7 @@ export function LeafletMap({
     <div
       className={cn(
         "relative overflow-hidden rounded-xl bg-gray-100",
-        isExpanded ? "fixed inset-4 z-50" : "",
+        isExpanded ? "fixed inset-4 z-40" : "",
         className
       )}
     >
