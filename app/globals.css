@@ -208,3 +208,179 @@
     box-shadow: 0 0 0 8px oklch(0.55 0.22 25 / 0);
   }
 }
+
+/* ===== HIGH CONTRAST MODE ===== */
+.high-contrast {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.08 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.05 0 0);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.85 0.18 65);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.15 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.12 0 0);
+  --muted-foreground: oklch(0.85 0 0);
+  --border: oklch(0.5 0 0);
+  --crisis-critical: oklch(0.65 0.25 25);
+  --crisis-warning: oklch(0.85 0.18 65);
+  --crisis-success: oklch(0.70 0.20 145);
+  --crisis-info: oklch(0.75 0.18 220);
+  --glass-bg: oklch(0.05 0 0 / 0.95);
+  --glass-border: oklch(0.6 0 0);
+}
+
+.high-contrast * {
+  border-color: var(--border) !important;
+}
+
+.high-contrast .glass,
+.high-contrast .glass-strong {
+  background: var(--glass-bg);
+  backdrop-filter: none;
+  border-width: 2px;
+}
+
+/* ===== REDUCED MOTION MODE ===== */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.reduce-motion .pulse-live,
+.reduce-motion .pulse-critical {
+  animation: none !important;
+}
+
+/* ===== BATTERY SAVER MODE ===== */
+.battery-saver .glass,
+.battery-saver .glass-strong {
+  backdrop-filter: none;
+  background: var(--card);
+}
+
+.battery-saver canvas {
+  display: none;
+}
+
+.battery-saver .animate-spin {
+  animation: none;
+}
+
+/* ===== RTL SUPPORT ===== */
+.rtl {
+  direction: rtl;
+}
+
+.rtl .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+.rtl .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+.rtl .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+.rtl .ml-auto { margin-left: 0; margin-right: auto; }
+.rtl .mr-auto { margin-right: 0; margin-left: auto; }
+.rtl .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+.rtl .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+.rtl .pl-2 { padding-left: 0; padding-right: 0.5rem; }
+.rtl .pr-2 { padding-right: 0; padding-left: 0.5rem; }
+.rtl .pl-4 { padding-left: 0; padding-right: 1rem; }
+.rtl .pr-4 { padding-right: 0; padding-left: 1rem; }
+.rtl .left-4 { left: auto; right: 1rem; }
+.rtl .right-4 { right: auto; left: 1rem; }
+.rtl .border-l { border-left: 0; border-right-width: 1px; }
+.rtl .border-r { border-right: 0; border-left-width: 1px; }
+.rtl .text-left { text-align: right; }
+.rtl .text-right { text-align: left; }
+
+/* ===== ACCESSIBILITY FOCUS STATES ===== */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.high-contrast :focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* ===== TOUCH TARGETS (56px minimum) ===== */
+@layer utilities {
+  .touch-target-lg {
+    min-height: 56px;
+    min-width: 56px;
+  }
+  
+  .touch-target-xl {
+    min-height: 80px;
+    min-width: 80px;
+  }
+}
+
+/* ===== SWIPE GESTURE SUPPORT ===== */
+@layer utilities {
+  .swipe-container {
+    touch-action: pan-y;
+    overflow-x: hidden;
+  }
+  
+  .swipe-item {
+    transform: translateX(0);
+    transition: transform 0.3s ease-out;
+  }
+  
+  .swipe-item.swiping {
+    transition: none;
+  }
+}
+
+/* ===== SKELETON LOADING ===== */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--secondary) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.reduce-motion .skeleton,
+.battery-saver .skeleton {
+  animation: none;
+  background: var(--muted);
+}
+
+/* ===== MOBILE-SPECIFIC (no glassmorphism) ===== */
+@media (max-width: 768px) {
+  .glass,
+  .glass-strong {
+    backdrop-filter: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+}
