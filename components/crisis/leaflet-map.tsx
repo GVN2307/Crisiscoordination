@@ -371,6 +371,42 @@ export function LeafletMap({
     return () => clearTimeout(timer);
   }, [isMapReady, getUserLocation]);
 
+  // Handle window resize
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    
+    // Also handle orientation change for mobile
+    const handleOrientationChange = () => {
+      setTimeout(handleResize, 200);
+    };
+    window.addEventListener("orientationchange", handleOrientationChange);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleOrientationChange);
+    };
+  }, [isMapReady]);
+
+  // Invalidate map size when expanded/collapsed
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    
+    // Small delay to let CSS transition complete
+    const timer = setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isExpanded]);
+
   // Retry loading
   const handleRetry = () => {
     setLoadError(null);
