@@ -87,13 +87,12 @@ export function LeafletMap({
     // Add zoom control to bottom right
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // OpenStreetMap tile layer (dark style)
-    const osmDark = L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    // OpenStreetMap tile layer (light style for better visibility)
+    const osmLight = L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: "abcd",
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }
     );
@@ -108,11 +107,11 @@ export function LeafletMap({
       }
     );
 
-    osmDark.addTo(map);
+    osmLight.addTo(map);
 
     // Store layers for switching
     (map as L.Map & { _layers: { osm: L.TileLayer; satellite: L.TileLayer } })._layers = {
-      osm: osmDark,
+      osm: osmLight,
       satellite: satellite,
     };
 
@@ -356,13 +355,13 @@ export function LeafletMap({
       {/* Location Status Banner */}
       {locationStatus === "denied" && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-          <div className="flex items-center gap-2 rounded-lg bg-destructive/90 px-4 py-2 text-sm text-white shadow-lg">
+          <div className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm text-white shadow-lg">
             <AlertTriangle className="h-4 w-4" />
             <span>Location access denied</span>
             <Button
               size="sm"
               variant="secondary"
-              className="h-7 text-xs"
+              className="h-7 text-xs bg-white text-red-600 hover:bg-gray-100"
               onClick={getUserLocation}
             >
               Retry
@@ -376,7 +375,7 @@ export function LeafletMap({
         <Button
           size="icon"
           variant="secondary"
-          className="h-12 w-12 rounded-xl bg-card/90 shadow-lg backdrop-blur-sm hover:bg-card"
+          className="h-12 w-12 rounded-xl bg-white shadow-lg border border-gray-200 hover:bg-gray-50 text-gray-700"
           onClick={() => setIsExpanded(!isExpanded)}
           aria-label={isExpanded ? "Minimize map" : "Maximize map"}
         >
@@ -390,8 +389,8 @@ export function LeafletMap({
           size="icon"
           variant="secondary"
           className={cn(
-            "h-12 w-12 rounded-xl bg-card/90 shadow-lg backdrop-blur-sm hover:bg-card",
-            showSatellite && "ring-2 ring-primary"
+            "h-12 w-12 rounded-xl bg-white shadow-lg border border-gray-200 hover:bg-gray-50 text-gray-700",
+            showSatellite && "ring-2 ring-blue-500 bg-blue-50"
           )}
           onClick={toggleSatellite}
           aria-label={showSatellite ? "Show street map" : "Show satellite view"}
@@ -402,9 +401,9 @@ export function LeafletMap({
           size="icon"
           variant="secondary"
           className={cn(
-            "h-12 w-12 rounded-xl bg-card/90 shadow-lg backdrop-blur-sm hover:bg-card",
+            "h-12 w-12 rounded-xl bg-white shadow-lg border border-gray-200 hover:bg-gray-50 text-gray-700",
             locationStatus === "loading" && "animate-pulse",
-            userLocation && "ring-2 ring-blue-500"
+            userLocation && "ring-2 ring-blue-500 bg-blue-50"
           )}
           onClick={centerOnUser}
           disabled={locationStatus === "loading"}
@@ -420,11 +419,11 @@ export function LeafletMap({
 
       {/* Stats Overlay */}
       <div className="absolute top-3 left-3 z-10">
-        <div className="flex items-center gap-2 rounded-xl bg-card/90 px-4 py-2.5 shadow-lg backdrop-blur-sm">
-          <MapPin className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">{incidents.length} incidents</span>
-          <span className="text-muted-foreground">|</span>
-          <Badge variant="outline" className="border-crisis-critical text-crisis-critical">
+        <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-lg border border-gray-200">
+          <MapPin className="h-4 w-4 text-blue-600" />
+          <span className="text-sm font-medium text-gray-800">{incidents.length} incidents</span>
+          <span className="text-gray-400">|</span>
+          <Badge variant="outline" className="border-red-500 text-red-600 bg-red-50">
             {incidents.filter((i) => i.severity === "critical").length} critical
           </Badge>
         </div>
@@ -433,9 +432,9 @@ export function LeafletMap({
       {/* User Location Display */}
       {userLocation && (
         <div className="absolute bottom-20 left-3 z-10">
-          <div className="flex items-center gap-2 rounded-xl bg-card/90 px-3 py-2 shadow-lg backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-lg border border-gray-200">
             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="text-xs font-mono text-gray-600">
               {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
             </span>
           </div>
@@ -444,54 +443,61 @@ export function LeafletMap({
 
       {/* Legend */}
       <div className="absolute bottom-3 left-3 z-10">
-        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-card/90 px-4 py-2.5 shadow-lg backdrop-blur-sm text-xs">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-2.5 shadow-lg border border-gray-200 text-xs text-gray-700">
           <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-crisis-critical" />
+            <div className="h-3 w-3 rounded-full bg-red-500" />
             <span>Critical</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-crisis-warning" />
+            <div className="h-3 w-3 rounded-full bg-amber-500" />
             <span>High</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-crisis-info" />
+            <div className="h-3 w-3 rounded-full bg-sky-500" />
             <span>Medium</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-crisis-success" />
+            <div className="h-3 w-3 rounded-full bg-emerald-500" />
             <span>Resolved</span>
           </div>
         </div>
       </div>
 
-      {/* Custom Popup Styles */}
+      {/* Custom Popup Styles for Light Map */}
       <style jsx global>{`
         .dark-popup .leaflet-popup-content-wrapper {
-          background: hsl(240 10% 12%);
-          color: white;
+          background: white;
+          color: #1a1a2e;
           border-radius: 12px;
-          border: 1px solid hsl(240 10% 25%);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         .dark-popup .leaflet-popup-tip {
-          background: hsl(240 10% 12%);
-          border: 1px solid hsl(240 10% 25%);
+          background: white;
+          border: 1px solid #e5e7eb;
+        }
+        .dark-popup .leaflet-popup-content {
+          color: #1a1a2e;
+        }
+        .dark-popup .leaflet-popup-content .text-gray-400 {
+          color: #6b7280 !important;
         }
         .leaflet-control-zoom a {
-          background: hsl(240 10% 15%) !important;
-          color: white !important;
-          border-color: hsl(240 10% 25%) !important;
+          background: white !important;
+          color: #1a1a2e !important;
+          border-color: #e5e7eb !important;
+          font-weight: 600 !important;
         }
         .leaflet-control-zoom a:hover {
-          background: hsl(240 10% 20%) !important;
+          background: #f3f4f6 !important;
         }
         .leaflet-control-attribution {
-          background: hsl(240 10% 12% / 0.9) !important;
-          color: hsl(240 10% 60%) !important;
+          background: rgba(255, 255, 255, 0.9) !important;
+          color: #6b7280 !important;
           font-size: 10px !important;
         }
         .leaflet-control-attribution a {
-          color: hsl(240 10% 70%) !important;
+          color: #3b82f6 !important;
         }
         .pulse-marker {
           animation: marker-pulse 2s ease-out infinite;
@@ -506,6 +512,13 @@ export function LeafletMap({
           100% {
             transform: scale(1);
           }
+        }
+        /* Improve marker visibility on light map */
+        .custom-marker > div > div {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        }
+        .user-location-marker > div > div:first-child {
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5) !important;
         }
       `}</style>
     </div>
