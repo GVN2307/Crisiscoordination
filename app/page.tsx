@@ -9,6 +9,7 @@ import { VerificationPanel } from "@/components/crisis/verification-panel";
 import { CrisisErrorBoundary } from "@/components/crisis/error-boundary";
 import { FlagFalseConfirmation, VerifyConfirmation } from "@/components/crisis/confirmation-modal";
 import { FloatingSOS } from "@/components/crisis/floating-sos";
+import { ZoneChat } from "@/components/crisis/zone-chat";
 import { mockIncidents } from "@/lib/mock-data";
 import type { Incident } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -399,26 +400,25 @@ export default function CrisisOSDashboard() {
         </button>
       </nav>
 
+      {/* Zone-based Local Chat */}
+      <ZoneChat userLocation={userLocation} />
+
       {/* Floating SOS Button - Highest z-index */}
       <FloatingSOS
         onReportIncident={handleReportIncident}
         userLocation={userLocation}
       />
 
-      {/* Verification Panel */}
-      {selectedIncident && (
-        <div className="fixed inset-0 z-[70]">
-          <CrisisErrorBoundary>
-            <VerificationPanel
-              incident={selectedIncident}
-              onClose={() => setSelectedIncident(null)}
-              onVerify={handleVerifyIncident}
-              onDebunk={handleDebunkIncident}
-              onRequestReview={() => setSelectedIncident(null)}
-            />
-          </CrisisErrorBoundary>
-        </div>
-      )}
+      {/* Verification Panel - Uses Sheet which has z-[60] */}
+      <CrisisErrorBoundary>
+        <VerificationPanel
+          incident={selectedIncident}
+          onClose={() => setSelectedIncident(null)}
+          onVerify={handleVerifyIncident}
+          onDebunk={handleDebunkIncident}
+          onRequestReview={() => setSelectedIncident(null)}
+        />
+      </CrisisErrorBoundary>
 
       {/* Confirmation Modals - Highest z-index */}
       <VerifyConfirmation
