@@ -335,27 +335,29 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
 
   return (
     <>
-      {/* Chat Button */}
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(true);
-          setUnreadCount(0);
-        }}
-        className={cn(
-          "fixed bottom-24 left-4 lg:bottom-6 lg:left-6 z-[50]",
-          "h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white",
-          "shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        )}
-        aria-label="Open zone chat"
-      >
-        <MessageCircle className="h-6 w-6" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs font-bold flex items-center justify-center">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </button>
+      {/* Chat Button - Always visible above map */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setUnreadCount(0);
+          }}
+          className={cn(
+            "fixed bottom-24 left-4 lg:bottom-6 lg:left-6 z-[9990]",
+            "h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white",
+            "shadow-lg flex items-center justify-center transition-all hover:scale-105"
+          )}
+          aria-label="Open zone chat"
+        >
+          <MessageCircle className="h-6 w-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs font-bold flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Chat Panel */}
       {isOpen && (
