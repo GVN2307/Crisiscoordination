@@ -4,20 +4,20 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // Content Security Policy
+  // Content Security Policy - Allow Leaflet map tiles and resources
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-    "img-src 'self' data: blob: https: http:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' wss: https: http://localhost:* ws://localhost:*",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://unpkg.com https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com",
+    "img-src 'self' data: blob: https: http: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://unpkg.com",
+    "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+    "connect-src 'self' wss: https: http://localhost:* ws://localhost:* https://*.tile.openstreetmap.org https://earthquake.usgs.gov https://www.gdacs.org",
     "frame-src 'self' https://vercel.live",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'self'",
-    "upgrade-insecure-requests",
+    "worker-src 'self' blob:",
   ].join("; ");
 
   // Security headers
