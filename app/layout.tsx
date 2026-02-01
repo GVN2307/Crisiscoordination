@@ -70,7 +70,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <head>
+        {/* RTL support detection script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var rtlLangs = ['ar', 'he', 'fa', 'ur', 'ps', 'sd'];
+                var userLang = navigator.language || navigator.userLanguage;
+                var langCode = userLang.split('-')[0].toLowerCase();
+                if (rtlLangs.includes(langCode)) {
+                  document.documentElement.dir = 'rtl';
+                  document.documentElement.lang = langCode;
+                  document.documentElement.classList.add('rtl');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased bg-gray-50 text-gray-900">
         {children}
         <Analytics />
