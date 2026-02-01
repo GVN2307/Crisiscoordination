@@ -1,8 +1,6 @@
 "use client";
 
-import React from "react"
-
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Incident, IncidentStatus } from "@/lib/types";
 import {
@@ -22,8 +20,13 @@ import {
   Building2,
   ShieldAlert,
   HelpCircle,
+  AlertTriangle,
+  Megaphone,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyIncidentState } from "@/components/crisis/empty-incident-state"; // Import EmptyIncidentState
+import { IncidentCard } from "@/components/crisis/incident-card"; // Import IncidentCard
 
 interface VerifiedCommandProps {
   incidents: Incident[];
@@ -95,22 +98,28 @@ export function VerifiedCommand({
     return `${Math.floor(hours / 24)}d ago`;
   };
 
+  const totalIncidents = filteredIncidents.length;
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" role="region" aria-label="Verified incident command center">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-crisis-success" />
+          <Shield className="h-5 w-5 text-crisis-success" aria-hidden="true" />
           <h2 className="font-semibold text-foreground">Verified Command</h2>
+          <span className="sr-only">{totalIncidents} incidents</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" role="tablist" aria-label="Filter incidents">
           {(["all", "verified", "unconfirmed", "resolved"] as const).map(
             (status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
+                role="tab"
+                aria-selected={filter === status}
+                aria-controls="incident-list"
                 className={cn(
-                  "rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                  "touch-target-lg min-h-[44px] rounded-md px-3 py-2 text-xs font-medium transition-colors",
                   filter === status
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-secondary"
@@ -124,20 +133,23 @@ export function VerifiedCommand({
       </div>
 
       {/* Kanban Columns */}
-      <div className="scrollbar-thin flex-1 overflow-y-auto p-3">
+      <div id="incident-list" className="scrollbar-thin flex-1 overflow-y-auto p-3" role="tabpanel">
+        {/* Empty State */}
+        {totalIncidents === 0 && <EmptyIncidentState onBroadcastSOS={() => {}} />}
+
         {/* Critical Section */}
         {groupedIncidents.critical.length > 0 && (
-          <div className="mb-4">
+          <section className="mb-4" aria-labelledby="critical-heading">
             <div className="mb-2 flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-crisis-critical pulse-critical" />
-              <span className="font-semibold text-crisis-critical text-sm">
-                CRITICAL
-              </span>
+              <div className="h-3 w-3 rounded-full bg-crisis-critical pulse-critical" aria-hidden="true" />
+              <h3 id="critical-heading" className="font-semibold text-crisis-critical text-sm">
+                CRITICAL - IMMEDIATE DANGER
+              </h3>
               <Badge variant="outline" className="border-crisis-critical/50 text-crisis-critical">
                 {groupedIncidents.critical.length}
               </Badge>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" role="list">
               {groupedIncidents.critical.map((incident) => (
                 <IncidentCard
                   key={incident.id}
@@ -147,7 +159,7 @@ export function VerifiedCommand({
                 />
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {/* High Section */}
@@ -224,99 +236,6 @@ export function VerifiedCommand({
             </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function IncidentCard({
-  incident,
-  onClick,
-  formatTime,
-}: {
-  incident: Incident;
-  onClick: () => void;
-  formatTime: (ts: number) => string;
-}) {
-  const StatusIcon = statusConfig[incident.status].icon;
-  const CategoryIcon = categoryIcons[incident.category] || HelpCircle;
-
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "glass group cursor-pointer rounded-lg p-3 transition-all hover:bg-secondary/50",
-        incident.severity === "critical" &&
-          "border-crisis-critical/30 ring-1 ring-crisis-critical/20"
-      )}
-    >
-      <div className="mb-2 flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs",
-              statusConfig[incident.status].bg,
-              statusConfig[incident.status].color
-            )}
-          >
-            <StatusIcon className="h-3 w-3" />
-            {incident.status}
-          </span>
-          <span className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-muted-foreground text-xs">
-            <CategoryIcon className="h-3 w-3" />
-            {incident.category}
-          </span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-      </div>
-
-      <h3 className="mb-1 font-medium text-foreground text-sm leading-tight">
-        {incident.title}
-      </h3>
-
-      <p className="mb-2 line-clamp-2 text-muted-foreground text-xs">
-        {incident.description}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs">
-          {incident.location.address && (
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              <span className="max-w-[120px] truncate">
-                {incident.location.address}
-              </span>
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <Users className="h-3 w-3" />
-            {incident.peerConfirmations}
-          </span>
-        </div>
-        <span className="flex items-center gap-1 text-muted-foreground text-xs">
-          <Clock className="h-3 w-3" />
-          {formatTime(incident.timestamp)}
-        </span>
-      </div>
-
-      {/* Confidence Bar */}
-      <div className="mt-2 flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-          <div
-            className={cn(
-              "h-full rounded-full transition-all",
-              incident.verification.score >= 80
-                ? "bg-crisis-success"
-                : incident.verification.score >= 50
-                  ? "bg-crisis-warning"
-                  : "bg-crisis-critical"
-            )}
-            style={{ width: `${incident.verification.score}%` }}
-          />
-        </div>
-        <span className="font-mono text-muted-foreground text-xs">
-          {incident.verification.score}%
-        </span>
       </div>
     </div>
   );
