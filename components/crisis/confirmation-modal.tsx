@@ -79,7 +79,7 @@ export function ConfirmationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="border-border bg-card sm:max-w-md">
+      <DialogContent className="border-border bg-white sm:max-w-md z-[110]">
         <DialogHeader>
           <div className="flex items-start gap-4">
             <div

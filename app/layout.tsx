@@ -11,10 +11,26 @@ const _ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CrisisOS - Civilian Crisis Coordination",
+  title: "SafeZone - Crisis Coordination Platform",
   description:
-    "AI-powered civilian crisis coordination OS with real-time verification and mesh networking for disaster response",
-  generator: "v0.app",
+    "Real-time disaster monitoring and emergency coordination platform. Report emergencies, view live global disaster alerts from GDACS, and get help when you need it most.",
+  keywords: ["disaster", "emergency", "crisis", "coordination", "GDACS", "humanitarian", "safety"],
+  authors: [{ name: "SafeZone Team" }],
+  creator: "SafeZone",
+  publisher: "SafeZone",
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    title: "SafeZone - Crisis Coordination Platform",
+    description: "Real-time disaster monitoring and emergency coordination platform",
+    siteName: "SafeZone",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SafeZone - Crisis Coordination Platform",
+    description: "Real-time disaster monitoring and emergency coordination platform",
+  },
   icons: {
     icon: [
       {
@@ -32,14 +48,20 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  manifest: "/manifest.json",
+    generator: 'v0.app'
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1a1a2e",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a2e" },
+  ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -48,8 +70,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="font-sans antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className="font-sans antialiased bg-gray-50 text-gray-900">
         {children}
         <Analytics />
       </body>
