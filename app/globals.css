@@ -392,6 +392,42 @@
   }
 }
 
+/* ===== RESPONSIVE OVERFLOW HANDLING ===== */
+@layer utilities {
+  .overflow-safe {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  .scroll-smooth-touch {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Ensure minimum content height on small screens */
+@media (max-height: 600px) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+}
+
+/* Use dynamic viewport height for better mobile support */
+@supports (min-height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
 /* ===== LEAFLET CUSTOM STYLES (LIGHT MAP) ===== */
 .leaflet-container {
   font-family: var(--font-sans);
