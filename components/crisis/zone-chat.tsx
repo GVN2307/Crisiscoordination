@@ -12,100 +12,73 @@ import {
   AlertTriangle,
   Shield,
   CheckCheck,
-  Clock,
+  Flag,
+  Search,
 } from "lucide-react";
 
-// Time-zone based regions covering the entire world
-const TIME_ZONE_REGIONS = [
-  // UTC-12 to UTC-9: Pacific Islands, Alaska
-  {
-    id: "pacific-west",
-    name: "Pacific West (UTC-12 to -9)",
-    description: "Hawaii, Alaska, Pacific Islands",
-    utcOffset: [-12, -9],
-    lngRange: [-180, -135],
-  },
-  // UTC-8 to UTC-6: North America West
-  {
-    id: "americas-west",
-    name: "Americas West (UTC-8 to -6)",
-    description: "US/Canada West Coast, Mexico",
-    utcOffset: [-8, -6],
-    lngRange: [-135, -90],
-  },
-  // UTC-5 to UTC-3: North & South America East
-  {
-    id: "americas-east",
-    name: "Americas East (UTC-5 to -3)",
-    description: "US East, Caribbean, Brazil, Argentina",
-    utcOffset: [-5, -3],
-    lngRange: [-90, -30],
-  },
-  // UTC-2 to UTC+0: Atlantic, West Africa, UK
-  {
-    id: "atlantic-europe",
-    name: "Atlantic & W. Europe (UTC-2 to 0)",
-    description: "UK, Portugal, West Africa, Atlantic",
-    utcOffset: [-2, 0],
-    lngRange: [-30, 0],
-  },
-  // UTC+1 to UTC+2: Central & Eastern Europe, Central Africa
-  {
-    id: "europe-africa",
-    name: "Europe & Africa (UTC+1 to +2)",
-    description: "Central Europe, East Africa, Middle East",
-    utcOffset: [1, 2],
-    lngRange: [0, 30],
-  },
-  // UTC+3 to UTC+4: East Europe, Middle East, East Africa
-  {
-    id: "middle-east",
-    name: "Middle East & E. Africa (UTC+3 to +4)",
-    description: "Russia West, Turkey, Saudi Arabia, East Africa",
-    utcOffset: [3, 4],
-    lngRange: [30, 60],
-  },
-  // UTC+5 to UTC+6: Central Asia, South Asia West
-  {
-    id: "central-asia",
-    name: "Central & South Asia (UTC+5 to +6)",
-    description: "Pakistan, India, Bangladesh, Central Asia",
-    utcOffset: [5, 6],
-    lngRange: [60, 90],
-  },
-  // UTC+7 to UTC+8: Southeast Asia, China, Australia West
-  {
-    id: "east-asia",
-    name: "East & SE Asia (UTC+7 to +8)",
-    description: "China, Southeast Asia, Indonesia, Australia West",
-    utcOffset: [7, 8],
-    lngRange: [90, 120],
-  },
-  // UTC+9 to UTC+10: Japan, Korea, Australia East
-  {
-    id: "asia-pacific",
-    name: "Asia Pacific (UTC+9 to +10)",
-    description: "Japan, Korea, Philippines, Australia East",
-    utcOffset: [9, 10],
-    lngRange: [120, 150],
-  },
-  // UTC+11 to UTC+12: Pacific Islands, New Zealand
-  {
-    id: "pacific-east",
-    name: "Pacific East (UTC+11 to +12)",
-    description: "New Zealand, Pacific Islands, Fiji",
-    utcOffset: [11, 12],
-    lngRange: [150, 180],
-  },
-  // Global channel
-  {
-    id: "global",
-    name: "Global",
-    description: "Worldwide emergency channel",
-    utcOffset: null,
-    lngRange: null,
-  },
+// Country-based chat zones
+const COUNTRY_ZONES = [
+  // Global
+  { id: "global", name: "Global", flag: "🌍", region: "Worldwide", description: "Worldwide emergency channel" },
+  
+  // North America
+  { id: "us", name: "United States", flag: "🇺🇸", region: "North America", description: "USA emergency coordination" },
+  { id: "ca", name: "Canada", flag: "🇨🇦", region: "North America", description: "Canada emergency coordination" },
+  { id: "mx", name: "Mexico", flag: "🇲🇽", region: "North America", description: "Mexico emergency coordination" },
+  
+  // South America
+  { id: "br", name: "Brazil", flag: "🇧🇷", region: "South America", description: "Brazil emergency coordination" },
+  { id: "ar", name: "Argentina", flag: "🇦🇷", region: "South America", description: "Argentina emergency coordination" },
+  { id: "co", name: "Colombia", flag: "🇨🇴", region: "South America", description: "Colombia emergency coordination" },
+  
+  // Europe
+  { id: "uk", name: "United Kingdom", flag: "🇬🇧", region: "Europe", description: "UK emergency coordination" },
+  { id: "de", name: "Germany", flag: "🇩🇪", region: "Europe", description: "Germany emergency coordination" },
+  { id: "fr", name: "France", flag: "🇫🇷", region: "Europe", description: "France emergency coordination" },
+  { id: "it", name: "Italy", flag: "🇮🇹", region: "Europe", description: "Italy emergency coordination" },
+  { id: "es", name: "Spain", flag: "🇪🇸", region: "Europe", description: "Spain emergency coordination" },
+  { id: "pl", name: "Poland", flag: "🇵🇱", region: "Europe", description: "Poland emergency coordination" },
+  { id: "ua", name: "Ukraine", flag: "🇺🇦", region: "Europe", description: "Ukraine emergency coordination" },
+  { id: "nl", name: "Netherlands", flag: "🇳🇱", region: "Europe", description: "Netherlands emergency coordination" },
+  
+  // Middle East
+  { id: "tr", name: "Turkey", flag: "🇹🇷", region: "Middle East", description: "Turkey emergency coordination" },
+  { id: "sa", name: "Saudi Arabia", flag: "🇸🇦", region: "Middle East", description: "Saudi Arabia emergency coordination" },
+  { id: "ae", name: "UAE", flag: "🇦🇪", region: "Middle East", description: "UAE emergency coordination" },
+  { id: "il", name: "Israel", flag: "🇮🇱", region: "Middle East", description: "Israel emergency coordination" },
+  { id: "ps", name: "Palestine", flag: "🇵🇸", region: "Middle East", description: "Palestine emergency coordination" },
+  { id: "sy", name: "Syria", flag: "🇸🇾", region: "Middle East", description: "Syria emergency coordination" },
+  { id: "iq", name: "Iraq", flag: "🇮🇶", region: "Middle East", description: "Iraq emergency coordination" },
+  { id: "ir", name: "Iran", flag: "🇮🇷", region: "Middle East", description: "Iran emergency coordination" },
+  
+  // Africa
+  { id: "eg", name: "Egypt", flag: "🇪🇬", region: "Africa", description: "Egypt emergency coordination" },
+  { id: "za", name: "South Africa", flag: "🇿🇦", region: "Africa", description: "South Africa emergency coordination" },
+  { id: "ng", name: "Nigeria", flag: "🇳🇬", region: "Africa", description: "Nigeria emergency coordination" },
+  { id: "ke", name: "Kenya", flag: "🇰🇪", region: "Africa", description: "Kenya emergency coordination" },
+  { id: "sd", name: "Sudan", flag: "🇸🇩", region: "Africa", description: "Sudan emergency coordination" },
+  { id: "et", name: "Ethiopia", flag: "🇪🇹", region: "Africa", description: "Ethiopia emergency coordination" },
+  
+  // Asia
+  { id: "in", name: "India", flag: "🇮🇳", region: "Asia", description: "India emergency coordination" },
+  { id: "pk", name: "Pakistan", flag: "🇵🇰", region: "Asia", description: "Pakistan emergency coordination" },
+  { id: "bd", name: "Bangladesh", flag: "🇧🇩", region: "Asia", description: "Bangladesh emergency coordination" },
+  { id: "cn", name: "China", flag: "🇨🇳", region: "Asia", description: "China emergency coordination" },
+  { id: "jp", name: "Japan", flag: "🇯🇵", region: "Asia", description: "Japan emergency coordination" },
+  { id: "kr", name: "South Korea", flag: "🇰🇷", region: "Asia", description: "South Korea emergency coordination" },
+  { id: "ph", name: "Philippines", flag: "🇵🇭", region: "Asia", description: "Philippines emergency coordination" },
+  { id: "id", name: "Indonesia", flag: "🇮🇩", region: "Asia", description: "Indonesia emergency coordination" },
+  { id: "th", name: "Thailand", flag: "🇹🇭", region: "Asia", description: "Thailand emergency coordination" },
+  { id: "vn", name: "Vietnam", flag: "🇻🇳", region: "Asia", description: "Vietnam emergency coordination" },
+  { id: "mm", name: "Myanmar", flag: "🇲🇲", region: "Asia", description: "Myanmar emergency coordination" },
+  
+  // Oceania
+  { id: "au", name: "Australia", flag: "🇦🇺", region: "Oceania", description: "Australia emergency coordination" },
+  { id: "nz", name: "New Zealand", flag: "🇳🇿", region: "Oceania", description: "New Zealand emergency coordination" },
 ];
+
+// Group countries by region for the selector
+const REGIONS = ["Worldwide", "North America", "South America", "Europe", "Middle East", "Africa", "Asia", "Oceania"];
 
 interface ChatMessage {
   id: string;
@@ -123,58 +96,74 @@ const generateInitialMessages = (): ChatMessage[] => {
   const messages: ChatMessage[] = [];
   const now = Date.now();
 
-  // Americas West
+  // USA
   messages.push(
-    { id: "msg-1", zoneId: "americas-west", userId: "u1", userName: "Maria G.", message: "Wildfire evacuation route clear on Highway 101 north of LA", timestamp: now - 3600000, type: "alert", read: true },
-    { id: "msg-2", zoneId: "americas-west", userId: "u2", userName: "James K.", message: "Power outage reported in San Francisco downtown area", timestamp: now - 7200000, type: "message", read: true },
+    { id: "msg-1", zoneId: "us", userId: "u1", userName: "Maria G.", message: "Wildfire evacuation route clear on Highway 101 north of LA", timestamp: now - 3600000, type: "alert", read: true },
+    { id: "msg-2", zoneId: "us", userId: "u2", userName: "James K.", message: "Power outage reported in San Francisco downtown area", timestamp: now - 7200000, type: "message", read: true },
   );
 
-  // Americas East
+  // UK
   messages.push(
-    { id: "msg-3", zoneId: "americas-east", userId: "u3", userName: "Carlos R.", message: "Hurricane shelter open at Miami Convention Center", timestamp: now - 5400000, type: "alert", read: true },
-    { id: "msg-4", zoneId: "americas-east", userId: "u4", userName: "Ana P.", message: "Flooding on I-95, use alternate routes", timestamp: now - 9000000, type: "message", read: true },
+    { id: "msg-3", zoneId: "uk", userId: "u3", userName: "Sarah W.", message: "Flooding warning for Somerset area, avoid A39", timestamp: now - 5400000, type: "alert", read: true },
   );
 
-  // Europe & Africa
+  // Germany
   messages.push(
-    { id: "msg-5", zoneId: "europe-africa", userId: "u5", userName: "Klaus M.", message: "Heatwave warning: cooling centers open in Berlin city center", timestamp: now - 4500000, type: "alert", read: true },
-    { id: "msg-6", zoneId: "europe-africa", userId: "u6", userName: "Fatima B.", message: "Flash flood warning lifted for Lagos coastal areas", timestamp: now - 8000000, type: "message", read: true },
+    { id: "msg-4", zoneId: "de", userId: "u4", userName: "Klaus M.", message: "Heatwave warning: cooling centers open in Berlin city center", timestamp: now - 4500000, type: "alert", read: true },
   );
 
-  // Middle East
+  // Ukraine
   messages.push(
-    { id: "msg-7", zoneId: "middle-east", userId: "u7", userName: "Ahmed K.", message: "Water distribution at Al-Shifa hospital parking, 2pm today", timestamp: now - 3600000, type: "alert", read: true },
-    { id: "msg-8", zoneId: "middle-east", userId: "u8", userName: "Olena P.", message: "Shelter open at metro station Khreshchatyk, Kyiv", timestamp: now - 5400000, type: "alert", read: true },
-    { id: "msg-9", zoneId: "middle-east", userId: "u9", userName: "Layla H.", message: "Medical supplies needed urgently at Damascus clinic", timestamp: now - 1800000, type: "alert", read: true },
+    { id: "msg-5", zoneId: "ua", userId: "u5", userName: "Olena P.", message: "Shelter open at metro station Khreshchatyk, Kyiv", timestamp: now - 5400000, type: "alert", read: true },
+    { id: "msg-6", zoneId: "ua", userId: "u6", userName: "Dmytro K.", message: "Power restored in Odesa district 7", timestamp: now - 3200000, type: "message", read: true },
   );
 
-  // Central Asia
+  // Palestine
   messages.push(
-    { id: "msg-10", zoneId: "central-asia", userId: "u10", userName: "Raj S.", message: "Cyclone shelter in Dhaka fully operational", timestamp: now - 6000000, type: "alert", read: true },
-    { id: "msg-11", zoneId: "central-asia", userId: "u11", userName: "Priya M.", message: "Road to Karachi airport reopened after floods", timestamp: now - 10000000, type: "message", read: true },
+    { id: "msg-7", zoneId: "ps", userId: "u7", userName: "Ahmed K.", message: "Water distribution at Al-Shifa hospital parking, 2pm today", timestamp: now - 3600000, type: "alert", read: true },
+    { id: "msg-8", zoneId: "ps", userId: "u8", userName: "Fatima H.", message: "Medical supplies needed urgently at Gaza clinic", timestamp: now - 1800000, type: "alert", read: true },
   );
 
-  // East Asia
+  // Syria
   messages.push(
-    { id: "msg-12", zoneId: "east-asia", userId: "u12", userName: "Wei L.", message: "Earthquake aftershock warning for Taiwan east coast", timestamp: now - 2400000, type: "alert", read: true },
-    { id: "msg-13", zoneId: "east-asia", userId: "u13", userName: "Nguyen T.", message: "Typhoon passed, all clear in Ho Chi Minh City", timestamp: now - 7000000, type: "message", read: true },
+    { id: "msg-9", zoneId: "sy", userId: "u9", userName: "Layla H.", message: "Food distribution at Damascus community center tomorrow 9am", timestamp: now - 4200000, type: "alert", read: true },
   );
 
-  // Asia Pacific
+  // Turkey
   messages.push(
-    { id: "msg-14", zoneId: "asia-pacific", userId: "u14", userName: "Yuki T.", message: "Tsunami warning lifted for Tokyo Bay area", timestamp: now - 3200000, type: "alert", read: true },
-    { id: "msg-15", zoneId: "asia-pacific", userId: "u15", userName: "Sarah W.", message: "Bushfire contained in NSW, evacuation order lifted", timestamp: now - 8500000, type: "message", read: true },
+    { id: "msg-10", zoneId: "tr", userId: "u10", userName: "Mehmet A.", message: "Earthquake aftershock felt in Antakya, stay alert", timestamp: now - 2800000, type: "alert", read: true },
   );
 
-  // Pacific regions
+  // India
   messages.push(
-    { id: "msg-16", zoneId: "pacific-east", userId: "u16", userName: "Tane M.", message: "Earthquake 6.1 felt in Wellington, no tsunami threat", timestamp: now - 4000000, type: "alert", read: true },
+    { id: "msg-11", zoneId: "in", userId: "u11", userName: "Raj S.", message: "Cyclone shelter in Chennai fully operational", timestamp: now - 6000000, type: "alert", read: true },
+    { id: "msg-12", zoneId: "in", userId: "u12", userName: "Priya M.", message: "Flood waters receding in Kerala, roads reopening", timestamp: now - 4000000, type: "message", read: true },
+  );
+
+  // Japan
+  messages.push(
+    { id: "msg-13", zoneId: "jp", userId: "u13", userName: "Yuki T.", message: "Tsunami warning lifted for Tokyo Bay area", timestamp: now - 3200000, type: "alert", read: true },
+  );
+
+  // Philippines
+  messages.push(
+    { id: "msg-14", zoneId: "ph", userId: "u14", userName: "Juan D.", message: "Typhoon passed, all clear in Manila metro", timestamp: now - 7000000, type: "message", read: true },
+  );
+
+  // Australia
+  messages.push(
+    { id: "msg-15", zoneId: "au", userId: "u15", userName: "Emma W.", message: "Bushfire contained in NSW, evacuation order lifted", timestamp: now - 8500000, type: "alert", read: true },
+  );
+
+  // Sudan
+  messages.push(
+    { id: "msg-16", zoneId: "sd", userId: "u16", userName: "Omar M.", message: "Humanitarian corridor open on Route 1 until 6pm", timestamp: now - 2400000, type: "alert", read: true },
   );
 
   // Global messages
   messages.push(
-    { id: "msg-17", zoneId: "global", userId: "system", userName: "SafeZone", message: "Welcome to SafeZone global chat. Your zone is auto-detected based on location. Switch zones using the dropdown above.", timestamp: now - 86400000, type: "system", read: true },
-    { id: "msg-18", zoneId: "global", userId: "u17", userName: "UN Relief", message: "GDACS reports major earthquake in Philippines. All users in Asia-Pacific zone please check in.", timestamp: now - 3000000, type: "alert", read: true },
+    { id: "msg-17", zoneId: "global", userId: "system", userName: "SafeZone", message: "Welcome to SafeZone global chat. Select your country from the dropdown to join local emergency coordination.", timestamp: now - 86400000, type: "system", read: true },
+    { id: "msg-18", zoneId: "global", userId: "u17", userName: "UN Relief", message: "GDACS reports major earthquake in Philippines. All users please check in with status.", timestamp: now - 3000000, type: "alert", read: true },
     { id: "msg-19", zoneId: "global", userId: "u18", userName: "Red Cross", message: "Global emergency funds activated for Middle East humanitarian response", timestamp: now - 6000000, type: "alert", read: true },
   );
 
@@ -192,33 +181,33 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
   const [selectedZone, setSelectedZone] = useState<string>("global");
   const [showZoneSelector, setShowZoneSelector] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Determine user's zone based on longitude
-  const userZone = useMemo(() => {
-    if (!userLocation) return null;
+  // Filter countries by search
+  const filteredCountries = useMemo(() => {
+    if (!searchQuery.trim()) return COUNTRY_ZONES;
+    const query = searchQuery.toLowerCase();
+    return COUNTRY_ZONES.filter(
+      (c) => c.name.toLowerCase().includes(query) || c.region.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
 
-    const { lng } = userLocation;
-
-    for (const zone of TIME_ZONE_REGIONS) {
-      if (zone.id === "global" || !zone.lngRange) continue;
-
-      const [minLng, maxLng] = zone.lngRange;
-      if (lng >= minLng && lng < maxLng) {
-        return zone;
+  // Group filtered countries by region
+  const groupedCountries = useMemo(() => {
+    const groups: Record<string, typeof COUNTRY_ZONES> = {};
+    for (const region of REGIONS) {
+      const countries = filteredCountries.filter((c) => 
+        c.region === region || (region === "Worldwide" && c.id === "global")
+      );
+      if (countries.length > 0) {
+        groups[region] = countries;
       }
     }
-
-    return null;
-  }, [userLocation]);
-
-  // Auto-select user's zone when detected
-  useEffect(() => {
-    if (userZone && selectedZone === "global") {
-      setSelectedZone(userZone.id);
-    }
-  }, [userZone, selectedZone]);
+    return groups;
+  }, [filteredCountries]);
 
   // Filter messages by zone
   const zoneMessages = useMemo(() => {
@@ -232,6 +221,30 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [zoneMessages]);
 
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (panelRef.current && isOpen) {
+        // Ensure panel stays within viewport
+        const vh = window.innerHeight;
+        const vw = window.innerWidth;
+        
+        if (vw < 1024) {
+          // Mobile: full screen
+          panelRef.current.style.height = `${vh}px`;
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", () => setTimeout(handleResize, 100));
+    
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, [isOpen]);
+
   // Simulate incoming messages
   useEffect(() => {
     if (!isOpen) return;
@@ -239,7 +252,7 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
     const interval = setInterval(() => {
       const random = Math.random();
       if (random > 0.85) {
-        const zones = TIME_ZONE_REGIONS.map(z => z.id);
+        const zones = COUNTRY_ZONES.map(z => z.id);
         const randomZone = zones[Math.floor(Math.random() * zones.length)];
         const simulatedMessages = [
           "Any updates on the situation?",
@@ -313,12 +326,11 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
 
-  const currentZone = TIME_ZONE_REGIONS.find((z) => z.id === selectedZone);
+  const currentZone = COUNTRY_ZONES.find((z) => z.id === selectedZone);
   // Generate a stable online count per zone
   const onlineCount = useMemo(() => {
-    // Use zone id to generate a pseudo-random but stable count
     const hash = selectedZone.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 50 + (hash % 200);
+    return 50 + (hash % 500);
   }, [selectedZone]);
 
   return (
@@ -331,7 +343,7 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
           setUnreadCount(0);
         }}
         className={cn(
-          "fixed bottom-20 left-4 lg:bottom-6 lg:left-6 z-[9998]",
+          "fixed bottom-24 left-4 lg:bottom-6 lg:left-6 z-[50]",
           "h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white",
           "shadow-lg flex items-center justify-center transition-all hover:scale-105"
         )}
@@ -347,15 +359,22 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] lg:inset-auto lg:bottom-6 lg:left-6 lg:w-[420px] lg:h-[650px] lg:rounded-2xl lg:shadow-2xl overflow-hidden bg-white flex flex-col">
+        <div 
+          ref={panelRef}
+          className="fixed inset-0 z-[9995] lg:inset-auto lg:bottom-6 lg:left-6 lg:w-[420px] lg:h-[600px] lg:max-h-[calc(100vh-48px)] lg:rounded-2xl lg:shadow-2xl overflow-hidden bg-white flex flex-col"
+        >
           {/* Header */}
           <header className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              <Globe className="h-5 w-5" />
+              {currentZone?.id === "global" ? (
+                <Globe className="h-5 w-5" />
+              ) : (
+                <span className="text-xl">{currentZone?.flag}</span>
+              )}
               <div>
-                <h2 className="font-semibold">Zone Chat</h2>
+                <h2 className="font-semibold">{currentZone?.name || "Zone Chat"}</h2>
                 <p className="text-xs text-blue-200">
-                  {onlineCount} users online in zone
+                  {onlineCount} users online
                 </p>
               </div>
             </div>
@@ -377,87 +396,94 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
               className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-blue-300 transition-colors"
             >
               <div className="flex items-center gap-2">
-                {selectedZone === "global" ? (
-                  <Globe className="h-4 w-4 text-blue-600" />
+                {currentZone?.id === "global" ? (
+                  <Globe className="h-5 w-5 text-blue-600" />
                 ) : (
-                  <Clock className="h-4 w-4 text-amber-500" />
+                  <span className="text-lg">{currentZone?.flag}</span>
                 )}
                 <div className="text-left">
                   <span className="font-medium text-gray-900 block">
-                    {currentZone?.name || "Select Zone"}
+                    {currentZone?.name || "Select Country"}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {currentZone?.description}
+                    {currentZone?.region}
                   </span>
                 </div>
-                {userZone && selectedZone === userZone.id && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full ml-2">
-                    Your zone
-                  </span>
-                )}
               </div>
               <ChevronDown className={cn("h-4 w-4 text-gray-500 transition-transform", showZoneSelector && "rotate-180")} />
             </button>
 
             {/* Zone Dropdown */}
             {showZoneSelector && (
-              <nav className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg" style={{ WebkitOverflowScrolling: "touch" }}>
-                <ul className="divide-y divide-gray-100">
-                  {TIME_ZONE_REGIONS.map((zone) => {
-                    const zoneMessageCount = messages.filter((m) => m.zoneId === zone.id).length;
-                    const isUserZone = userZone?.id === zone.id;
-                    const hasUnread = messages.some(m => m.zoneId === zone.id && !m.read);
+              <div className="mt-2 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                {/* Search */}
+                <div className="p-2 border-b border-gray-100">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search country..."
+                      className="w-full h-10 pl-9 pr-3 rounded-lg bg-gray-50 border-none text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                {/* Country List */}
+                <nav className="max-h-64 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                  {Object.entries(groupedCountries).map(([region, countries]) => (
+                    <div key={region}>
+                      <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0">
+                        {region}
+                      </div>
+                      <ul>
+                        {countries.map((zone) => {
+                          const zoneMessageCount = messages.filter((m) => m.zoneId === zone.id).length;
+                          const hasUnread = messages.some(m => m.zoneId === zone.id && !m.read);
 
-                    return (
-                      <li key={zone.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedZone(zone.id);
-                            setShowZoneSelector(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-3 hover:bg-gray-50 transition-colors text-left",
-                            selectedZone === zone.id && "bg-blue-50"
-                          )}
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {zone.id === "global" ? (
-                              <Globe className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                            ) : (
-                              <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                            )}
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className={cn(
-                                  "text-sm truncate",
-                                  selectedZone === zone.id ? "font-semibold text-blue-600" : "font-medium text-gray-900"
-                                )}>
-                                  {zone.name}
+                          return (
+                            <li key={zone.id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedZone(zone.id);
+                                  setShowZoneSelector(false);
+                                  setSearchQuery("");
+                                }}
+                                className={cn(
+                                  "w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors text-left",
+                                  selectedZone === zone.id && "bg-blue-50"
+                                )}
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <span className="text-lg flex-shrink-0">{zone.flag}</span>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className={cn(
+                                        "text-sm truncate",
+                                        selectedZone === zone.id ? "font-semibold text-blue-600" : "font-medium text-gray-900"
+                                      )}>
+                                        {zone.name}
+                                      </span>
+                                      {hasUnread && (
+                                        <span className="h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                                  {zoneMessageCount}
                                 </span>
-                                {isUserZone && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded flex-shrink-0">
-                                    You
-                                  </span>
-                                )}
-                                {hasUnread && (
-                                  <span className="h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />
-                                )}
-                              </div>
-                              <span className="text-xs text-gray-500 truncate block">
-                                {zone.description}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                            {zoneMessageCount}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </nav>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </nav>
+              </div>
             )}
           </div>
 
@@ -471,7 +497,7 @@ export function ZoneChat({ userLocation }: ZoneChatProps) {
                 <MessageCircle className="h-12 w-12 text-gray-300 mb-3" />
                 <p className="text-gray-500 font-medium">No messages yet</p>
                 <p className="text-sm text-gray-400">
-                  Be the first to share information in this zone
+                  Be the first to share information in {currentZone?.name}
                 </p>
               </div>
             ) : (

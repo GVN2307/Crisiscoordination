@@ -78,24 +78,24 @@ Before you begin, make sure you have:
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+   \`\`\`bash
    git clone https://github.com/your-username/safezone.git
    cd safezone
-   ```
+   \`\`\`
 
 2. **Install dependencies**
-   ```bash
+   \`\`\`bash
    npm install
    # or
    yarn install
-   ```
+   \`\`\`
 
 3. **Run the development server**
-   ```bash
+   \`\`\`bash
    npm run dev
    # or
    yarn dev
-   ```
+   \`\`\`
 
 4. **Open in browser**
    
@@ -107,10 +107,10 @@ That's it! The app should now be running on your computer.
 
 The app works without any API keys. However, for production deployment, you may want to set:
 
-```env
+\`\`\`env
 # No required environment variables
 # GDACS API is free and requires no authentication
-```
+\`\`\`
 
 ---
 
@@ -152,7 +152,7 @@ The app works without any API keys. However, for production deployment, you may 
 
 ## Project Structure
 
-```
+\`\`\`
 safezone/
 ├── app/                        # Next.js app directory
 │   ├── api/                    # API routes
@@ -177,7 +177,7 @@ safezone/
 │
 └── public/                     # Static assets
     └── manifest.json           # PWA manifest
-```
+\`\`\`
 
 ### Key Files Explained
 
@@ -214,7 +214,7 @@ safezone/
 Fetches real-time disaster data from GDACS.
 
 **Response:**
-```json
+\`\`\`json
 {
   "disasters": [
     {
@@ -234,7 +234,7 @@ Fetches real-time disaster data from GDACS.
   ],
   "lastUpdated": "2026-02-01T12:00:00Z"
 }
-```
+\`\`\`
 
 **Data Source:** [GDACS RSS Feed](https://www.gdacs.org/xml/rss.xml)
 
@@ -291,14 +291,14 @@ That's it! Vercel handles everything automatically.
 ### Manual Deployment
 
 1. Build the app:
-   ```bash
+   \`\`\`bash
    npm run build
-   ```
+   \`\`\`
 
 2. Start production server:
-   ```bash
+   \`\`\`bash
    npm start
-   ```
+   \`\`\`
 
 ### Live Demo
 

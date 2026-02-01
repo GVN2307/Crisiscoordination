@@ -155,17 +155,16 @@ export function QuickActions({ onReportIncident, userLocation }: QuickActionsPro
         ))}
       </div>
 
-      {/* Report Dialog - Fixed Overlay with High Z-Index */}
+      {/* Report Dialog - Fixed Overlay with Highest Z-Index (above map) */}
       {showDialog && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+          className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/60"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleClose();
           }}
         >
           <div
-            className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden"
+            className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative z-[9991]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Success State */}

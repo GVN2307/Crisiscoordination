@@ -103,14 +103,14 @@ export function FloatingSOS({ onReportIncident, userLocation }: FloatingSOSProps
       {/* Overlay when expanded */}
       {isExpanded && (
         <div
-          className="fixed inset-0 bg-black/60 z-[9998] animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/60 z-[9996] animate-in fade-in duration-200"
           onClick={() => setIsExpanded(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Floating Button Container - Highest z-index */}
-      <div className="fixed bottom-20 right-4 z-[9999] lg:bottom-6 lg:right-6">
+      {/* Floating Button Container */}
+      <div className="fixed bottom-24 right-4 z-[9997] lg:bottom-6 lg:right-6">
         {/* Success State */}
         {submitted && (
           <div className="absolute bottom-0 right-0 w-72 rounded-2xl bg-green-500 text-white p-4 shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
