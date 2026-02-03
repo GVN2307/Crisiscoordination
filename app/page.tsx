@@ -11,6 +11,7 @@ import { FlagFalseConfirmation, VerifyConfirmation } from "@/components/crisis/c
 import { FloatingSOS } from "@/components/crisis/floating-sos";
 import { ZoneChat } from "@/components/crisis/zone-chat";
 import { StickyStatusIndicator } from "@/components/crisis/sticky-status-indicator";
+import { GuardianBot } from "@/components/crisis/guardian-bot";
 import { mockIncidents } from "@/lib/mock-data";
 import type { Incident } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import {
   Globe,
   AlertCircle,
   Loader2,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -49,6 +51,9 @@ export default function CrisisOSDashboard() {
   const [showFlagConfirm, setShowFlagConfirm] = useState(false);
   const [showVerifyConfirm, setShowVerifyConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; id: string } | null>(null);
+
+  // Guardian Bot
+  const [showGuardianBot, setShowGuardianBot] = useState(false);
 
   // Fetch live GDACS data
   const {
@@ -257,6 +262,18 @@ export default function CrisisOSDashboard() {
             <RefreshCw className={cn("h-5 w-5 text-gray-600", isLoadingLive && "animate-spin")} />
           </Button>
 
+          {/* Guardian Bot */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full hover:bg-green-100 relative"
+            onClick={() => setShowGuardianBot(true)}
+            title="Guardian Autonomous Bot"
+          >
+            <Bot className="h-5 w-5 text-green-600" />
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white" />
+          </Button>
+
           {/* Settings */}
           <Button
             variant="ghost"
@@ -404,11 +421,17 @@ export default function CrisisOSDashboard() {
         </button>
       </nav>
 
-      {/* Zone-based Local Chat */}
-      <ZoneChat userLocation={userLocation} />
+{/* Zone-based Local Chat */}
+  <ZoneChat userLocation={userLocation} />
 
-      {/* Floating SOS Button - Highest z-index */}
-      <FloatingSOS
+  {/* Guardian Autonomous Bot */}
+  <GuardianBot
+    isOpen={showGuardianBot}
+    onClose={() => setShowGuardianBot(false)}
+  />
+  
+  {/* Floating SOS Button - Highest z-index */}
+  <FloatingSOS
         onReportIncident={handleReportIncident}
         userLocation={userLocation}
       />
