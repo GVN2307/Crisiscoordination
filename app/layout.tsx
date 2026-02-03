@@ -90,7 +90,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased bg-gray-50 text-gray-900">
+      <body className="font-sans antialiased bg-background text-foreground">
         {children}
         <Analytics />
       </body>
